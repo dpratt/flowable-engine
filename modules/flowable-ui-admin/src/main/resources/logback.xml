@@ -1,0 +1,16 @@
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{15}) - %msg%n%rootException</pattern>
+    </encoder>
+  </appender>
+
+  <logger level="INFO" name="org.flowable"/>
+  <logger level="INFO" name="org.apache.ibatis.level"/>
+  <logger level="INFO" name="javax.activation.level"/>
+
+  <root level="WARN">
+    <appender-ref ref="STDOUT"/>
+  </root>
+
+</configuration>

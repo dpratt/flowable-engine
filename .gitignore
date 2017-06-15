@@ -1,4 +1,5 @@
-target
+**/target/
+**/node_modules/
 *.iml
 *.ipr
 *.iws
@@ -18,5 +19,6 @@ modules/flowable-webapp-rest2/src/main/webapp/docs
 modules/flowable-app-rest/.extract
 modules/flowable-ui-idm/flowable-ui-idm-app/.extract
 modules/flowable-app-rest/src/main/webapp/docs/specfile
+deploy-image/apps
 userguide-dmn/src/en/output
 userguide-form/src/en/output

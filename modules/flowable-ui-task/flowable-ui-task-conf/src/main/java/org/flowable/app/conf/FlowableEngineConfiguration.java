@@ -56,175 +56,179 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @ComponentScan(basePackages = {
-        "org.flowable.app.extension.conf", // For custom configuration classes
-        "org.flowable.app.extension.bean" // For custom beans (delegates etc.)
-})
+    "org.flowable.app.extension.conf", // For custom configuration classes
+    "org.flowable.app.extension.bean" // For custom beans (delegates etc.)
+  })
 public class FlowableEngineConfiguration {
 
-    private final Logger logger = LoggerFactory.getLogger(FlowableEngineConfiguration.class);
+  private final Logger logger = LoggerFactory.getLogger(FlowableEngineConfiguration.class);
 
-    protected static final String PROP_FS_ROOT = "contentstorage.fs.rootFolder";
-    protected static final String PROP_FS_CREATE_ROOT = "contentstorage.fs.createRoot";
+  protected static final String PROP_FS_ROOT = "contentstorage.fs.rootFolder";
+  protected static final String PROP_FS_CREATE_ROOT = "contentstorage.fs.createRoot";
 
-    @Autowired
-    protected ProcessDebugger processDebugger;
-    
-    @Autowired
-    protected DataSource dataSource;
+  @Autowired
+  protected ProcessDebugger processDebugger;
+  
+  @Autowired
+  protected DataSource dataSource;
 
-    @Autowired
-    protected PlatformTransactionManager transactionManager;
+  @Autowired
+  protected PlatformTransactionManager transactionManager;
 
-    @Autowired
-    protected Environment environment;
+  @Autowired
+  protected Environment environment;
 
-    @Bean(name = "processEngine")
-    public ProcessEngineFactoryBean processEngineFactoryBean() {
-        ProcessEngineFactoryBean factoryBean = new ProcessEngineFactoryBean();
-        factoryBean.setProcessEngineConfiguration(processEngineConfiguration());
-        return factoryBean;
-    }
+  @Bean(name = "processEngine")
+  public ProcessEngineFactoryBean processEngineFactoryBean() {
+    ProcessEngineFactoryBean factoryBean = new ProcessEngineFactoryBean();
+    factoryBean.setProcessEngineConfiguration(processEngineConfiguration());
+    return factoryBean;
+  }
 
-    public ProcessEngine processEngine() {
+  public ProcessEngine processEngine() {
         // Safe to call the getObject() on the @Bean annotated processEngineFactoryBean(), will be
         // the fully initialized object instanced from the factory and will NOT be created more than once
-        try {
-            return processEngineFactoryBean().getObject();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    try {
+      return processEngineFactoryBean().getObject();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Bean(name = "processEngineConfiguration")
+  public ProcessEngineConfigurationImpl processEngineConfiguration() {
+    SpringProcessEngineConfiguration processEngineConfiguration = new SpringProcessEngineConfiguration();
+    processEngineConfiguration.setDataSource(dataSource);
+
+    //Ensure that the engine does not update the DB schema, nor does it attempt to validate that the version is correct.
+    processEngineConfiguration.setUsingRelationalDatabase(true);
+    processEngineConfiguration.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_FALSE);
+
+    processEngineConfiguration.setTransactionManager(transactionManager);
+    processEngineConfiguration.setAsyncExecutorActivate(false);
+    //processEngineConfiguration.setAsyncExecutor(asyncExecutor());
+    
+    if (environment.getProperty("debugger.enabled", Boolean.class, false)) {
+      processEngineConfiguration.setAgendaFactory(agendaFactory());
+      ArrayList<JobHandler> customJobHandlers = new ArrayList<>();
+      customJobHandlers.add(new BreakpointJobHandler());
+      processEngineConfiguration.setCustomJobHandlers(customJobHandlers);
     }
 
-    @Bean(name = "processEngineConfiguration")
-    public ProcessEngineConfigurationImpl processEngineConfiguration() {
-        SpringProcessEngineConfiguration processEngineConfiguration = new SpringProcessEngineConfiguration();
-        processEngineConfiguration.setDataSource(dataSource);
-        processEngineConfiguration.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
-        processEngineConfiguration.setTransactionManager(transactionManager);
-        processEngineConfiguration.setAsyncExecutorActivate(true);
-        processEngineConfiguration.setAsyncExecutor(asyncExecutor());
-        
-        if (environment.getProperty("debugger.enabled", Boolean.class, false)) {
-            processEngineConfiguration.setAgendaFactory(agendaFactory());
-            ArrayList<JobHandler> customJobHandlers = new ArrayList<>();
-            customJobHandlers.add(new BreakpointJobHandler());
-            processEngineConfiguration.setCustomJobHandlers(customJobHandlers);
-        }
+    String emailHost = environment.getProperty("email.host");
+    if (StringUtils.isNotEmpty(emailHost)) {
+      processEngineConfiguration.setMailServerHost(emailHost);
+      processEngineConfiguration.setMailServerPort(environment.getRequiredProperty("email.port", Integer.class));
 
-        String emailHost = environment.getProperty("email.host");
-        if (StringUtils.isNotEmpty(emailHost)) {
-            processEngineConfiguration.setMailServerHost(emailHost);
-            processEngineConfiguration.setMailServerPort(environment.getRequiredProperty("email.port", Integer.class));
-
-            Boolean useCredentials = environment.getProperty("email.useCredentials", Boolean.class);
-            if (Boolean.TRUE.equals(useCredentials)) {
-                processEngineConfiguration.setMailServerUsername(environment.getProperty("email.username"));
-                processEngineConfiguration.setMailServerPassword(environment.getProperty("email.password"));
-            }
-        }
+      Boolean useCredentials = environment.getProperty("email.useCredentials", Boolean.class);
+      if (Boolean.TRUE.equals(useCredentials)) {
+        processEngineConfiguration.setMailServerUsername(environment.getProperty("email.username"));
+        processEngineConfiguration.setMailServerPassword(environment.getProperty("email.password"));
+      }
+    }
 
         // Limit process definition cache
-        processEngineConfiguration.setProcessDefinitionCacheLimit(environment.getProperty("flowable.process-definitions.cache.max", Integer.class, 128));
+    processEngineConfiguration.setProcessDefinitionCacheLimit(environment.getProperty("flowable.process-definitions.cache.max", Integer.class, 128));
 
         // Enable safe XML. See http://www.flowable.org/docs/userguide/index.html#advanced.safe.bpmn.xml
-        processEngineConfiguration.setEnableSafeBpmnXml(true);
+    processEngineConfiguration.setEnableSafeBpmnXml(true);
 
-        processEngineConfiguration.setDisableIdmEngine(true);
-        processEngineConfiguration.addConfigurator(new SpringFormEngineConfigurator());
-        processEngineConfiguration.addConfigurator(new SpringDmnEngineConfigurator());
+    processEngineConfiguration.setDisableIdmEngine(true);
+    processEngineConfiguration.addConfigurator(new SpringFormEngineConfigurator());
+    processEngineConfiguration.addConfigurator(new SpringDmnEngineConfigurator());
 
-        SpringContentEngineConfiguration contentEngineConfiguration = new SpringContentEngineConfiguration();
-        String contentRootFolder = environment.getProperty(PROP_FS_ROOT);
-        if (contentRootFolder != null) {
-            contentEngineConfiguration.setContentRootFolder(contentRootFolder);
-        }
-
-        Boolean createRootFolder = environment.getProperty(PROP_FS_CREATE_ROOT, Boolean.class);
-        if (createRootFolder != null) {
-            contentEngineConfiguration.setCreateContentRootFolder(createRootFolder);
-        }
-
-        SpringContentEngineConfigurator springContentEngineConfigurator = new SpringContentEngineConfigurator();
-        springContentEngineConfigurator.setContentEngineConfiguration(contentEngineConfiguration);
-
-        processEngineConfiguration.addConfigurator(springContentEngineConfigurator);
-
-        return processEngineConfiguration;
+    SpringContentEngineConfiguration contentEngineConfiguration = new SpringContentEngineConfiguration();
+    String contentRootFolder = environment.getProperty(PROP_FS_ROOT);
+    if (contentRootFolder != null) {
+      contentEngineConfiguration.setContentRootFolder(contentRootFolder);
     }
 
-    @Bean
-    public FlowableEngineAgendaFactory agendaFactory() {
-        DebugFlowableEngineAgendaFactory debugAgendaFactory = new DebugFlowableEngineAgendaFactory();
-        debugAgendaFactory.setDebugger(processDebugger);
-        return debugAgendaFactory;
+    Boolean createRootFolder = environment.getProperty(PROP_FS_CREATE_ROOT, Boolean.class);
+    if (createRootFolder != null) {
+      contentEngineConfiguration.setCreateContentRootFolder(createRootFolder);
     }
 
-    @Bean
-    public AsyncExecutor asyncExecutor() {
-        DefaultAsyncJobExecutor asyncExecutor = new DefaultAsyncJobExecutor();
-        asyncExecutor.setDefaultAsyncJobAcquireWaitTimeInMillis(5000);
-        asyncExecutor.setDefaultTimerJobAcquireWaitTimeInMillis(5000);
-        return asyncExecutor;
-    }
+    SpringContentEngineConfigurator springContentEngineConfigurator = new SpringContentEngineConfigurator();
+    springContentEngineConfigurator.setContentEngineConfiguration(contentEngineConfiguration);
 
-    @Bean(name = "clock")
-    @DependsOn("processEngine")
-    public Clock getClock() {
-        return processEngineConfiguration().getClock();
-    }
+    processEngineConfiguration.addConfigurator(springContentEngineConfigurator);
 
-    @Bean
-    public RepositoryService repositoryService() {
-        return processEngine().getRepositoryService();
-    }
+    return processEngineConfiguration;
+  }
 
-    @Bean
-    public RuntimeService runtimeService() {
-        return processEngine().getRuntimeService();
-    }
+  @Bean
+  public FlowableEngineAgendaFactory agendaFactory() {
+    DebugFlowableEngineAgendaFactory debugAgendaFactory = new DebugFlowableEngineAgendaFactory();
+    debugAgendaFactory.setDebugger(processDebugger);
+    return debugAgendaFactory;
+  }
 
-    @Bean
-    public TaskService taskService() {
-        return processEngine().getTaskService();
-    }
+  // @Bean
+  // public AsyncExecutor asyncExecutor() {
+  //   DefaultAsyncJobExecutor asyncExecutor = new DefaultAsyncJobExecutor();
+  //   asyncExecutor.setDefaultAsyncJobAcquireWaitTimeInMillis(5000);
+  //   asyncExecutor.setDefaultTimerJobAcquireWaitTimeInMillis(5000);
+  //   return asyncExecutor;
+  // }
 
-    @Bean
-    public HistoryService historyService() {
-        return processEngine().getHistoryService();
-    }
+  @Bean(name = "clock")
+  @DependsOn("processEngine")
+  public Clock getClock() {
+    return processEngineConfiguration().getClock();
+  }
 
-    @Bean
-    public FormService formService() {
-        return processEngine().getFormService();
-    }
+  @Bean
+  public RepositoryService repositoryService() {
+    return processEngine().getRepositoryService();
+  }
 
-    @Bean
-    public ManagementService managementService() {
-        return processEngine().getManagementService();
-    }
+  @Bean
+  public RuntimeService runtimeService() {
+    return processEngine().getRuntimeService();
+  }
 
-    @Bean
-    public FormRepositoryService formEngineRepositoryService() {
-        return processEngine().getFormEngineRepositoryService();
-    }
+  @Bean
+  public TaskService taskService() {
+    return processEngine().getTaskService();
+  }
 
-    @Bean
-    public org.flowable.form.api.FormService formEngineFormService() {
-        return processEngine().getFormEngineFormService();
-    }
+  @Bean
+  public HistoryService historyService() {
+    return processEngine().getHistoryService();
+  }
 
-    @Bean
-    public DmnRepositoryService dmnRepositoryService() {
-        return processEngine().getDmnRepositoryService();
-    }
+  @Bean
+  public FormService formService() {
+    return processEngine().getFormService();
+  }
 
-    @Bean
-    public DmnRuleService dmnRuleService() {
-        return processEngine().getDmnRuleService();
-    }
+  @Bean
+  public ManagementService managementService() {
+    return processEngine().getManagementService();
+  }
 
-    @Bean
-    public ContentService contentService() {
-        return processEngine().getContentService();
-    }
+  @Bean
+  public FormRepositoryService formEngineRepositoryService() {
+    return processEngine().getFormEngineRepositoryService();
+  }
+
+  @Bean
+  public org.flowable.form.api.FormService formEngineFormService() {
+    return processEngine().getFormEngineFormService();
+  }
+
+  @Bean
+  public DmnRepositoryService dmnRepositoryService() {
+    return processEngine().getDmnRepositoryService();
+  }
+
+  @Bean
+  public DmnRuleService dmnRuleService() {
+    return processEngine().getDmnRuleService();
+  }
+
+  @Bean
+  public ContentService contentService() {
+    return processEngine().getContentService();
+  }
 }

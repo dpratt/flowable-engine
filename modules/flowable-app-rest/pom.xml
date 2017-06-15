@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <name>Flowable - REST - APP</name>
@@ -21,30 +20,23 @@
   <build>
     <finalName>flowable-rest</finalName>
     <plugins>
+
       <plugin>
         <groupId>org.zeroturnaround</groupId>
         <artifactId>jrebel-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>generate-rebel-xml</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>generate</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
+
       <plugin>
-	    <groupId>org.apache.tomcat.maven</groupId>
+        <groupId>org.apache.tomcat.maven</groupId>
         <artifactId>tomcat7-maven-plugin</artifactId>
-		<configuration>
-		  <port>8080</port>
-		  <path>/flowable-rest</path>
+        <configuration>
+          <port>8080</port>
+          <path>/flowable-rest</path>
           <warDirectory>${project.build.directory}/${project.build.finalName}</warDirectory>
           <systemProperties>
-		    <com.sun.management.jmxremote.port>4000</com.sun.management.jmxremote.port>
+            <com.sun.management.jmxremote.port>4000</com.sun.management.jmxremote.port>
           </systemProperties>
-		</configuration>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
@@ -62,83 +54,34 @@
         </configuration>
       </plugin>
     </plugins>
-    <pluginManagement>
-      <plugins>
-        <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>
-                      org.zeroturnaround
-                    </groupId>
-                    <artifactId>
-                      jrebel-maven-plugin
-                    </artifactId>
-                    <versionRange>
-                      [1.0.7,)
-                    </versionRange>
-                    <goals>
-                      <goal>generate</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-                <pluginExecution>
-                	<pluginExecutionFilter>
-                		<groupId>com.github.kongchen</groupId>
-                		<artifactId>swagger-maven-plugin</artifactId>
-                		<versionRange>[3.1.4,)</versionRange>
-                		<goals>
-                			<goal>generate</goal>
-                		</goals>
-                	</pluginExecutionFilter>
-                	<action>
-                		<ignore></ignore>
-                	</action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
 
   <profiles>
     <profile>
-	  <id>buildExecutableWar</id>
-	    <build>
-		  <plugins>
-            <plugin>
-              <groupId>org.apache.tomcat.maven</groupId>
-			  <artifactId>tomcat7-maven-plugin</artifactId>
-			  <version>2.2</version>
-			  <configuration>
-			    <path>/</path>
-			  </configuration>
-			  <executions>
-			    <execution>
-				  <id>tomcat-run</id>
-				  <goals>
-				    <goal>exec-war-only</goal>
-				  </goals>
-				  <phase>package</phase>
-				  <configuration>
-                    <path>/flowable-rest</path>
-                  </configuration>
-				</execution>
-			  </executions>
-			</plugin>
-		  </plugins>
-	  </build>
+      <id>buildExecutableWar</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.tomcat.maven</groupId>
+            <artifactId>tomcat7-maven-plugin</artifactId>
+            <configuration>
+              <path>/</path>
+            </configuration>
+            <executions>
+              <execution>
+                <id>tomcat-run</id>
+                <goals>
+                  <goal>exec-war-only</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <path>/flowable-rest</path>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>swagger</id>
@@ -168,7 +111,7 @@
                     <title>Flowable REST API</title>
                     <version>v1</version>
                     <contact>
-                      <email></email>
+                      <email />
                       <name>Flowable</name>
                       <url>http://www.flowable.org/</url>
                     </contact>
@@ -206,7 +149,7 @@
                     <title>Flowable DMN REST API</title>
                     <version>v1</version>
                     <contact>
-                      <email></email>
+                      <email />
                       <name>Flowable</name>
                       <url>http://www.flowable.org/</url>
                     </contact>
@@ -244,7 +187,7 @@
                     <title>Flowable FORM REST API</title>
                     <version>v1</version>
                     <contact>
-                      <email></email>
+                      <email />
                       <name>Flowable</name>
                       <url>http://www.flowable.org/</url>
                     </contact>
@@ -282,7 +225,7 @@
                     <title>Flowable CONTENT REST API</title>
                     <version>v1</version>
                     <contact>
-                      <email></email>
+                      <email />
                       <name>Flowable</name>
                       <url>http://www.flowable.org/</url>
                     </contact>
@@ -409,11 +352,12 @@
           <plugin>
             <groupId>com.spotify</groupId>
             <artifactId>docker-maven-plugin</artifactId>
-            <version>0.4.13</version>
             <configuration>
               <imageName>flowable/${project.build.finalName}</imageName>
               <baseImage>flowable/java8_server</baseImage>
-              <entryPoint>["java", "-jar", "/${project.build.finalName}.jar", "-httpPort=8080", "-httpProtocol=org.apache.coyote.http11.Http11NioProtocol"]</entryPoint>
+              <entryPoint>["java", "-jar", "/${project.build.finalName}.jar", "-httpPort=8080",
+                "-httpProtocol=org.apache.coyote.http11.Http11NioProtocol"]
+              </entryPoint>
               <forceTags>true</forceTags>
               <imageTags>
                 <imageTag>${project.version}</imageTag>
@@ -426,7 +370,7 @@
                   <include>${project.build.finalName}.jar</include>
                 </resource>
                 <resource>
-                <targetPath>/</targetPath>
+                  <targetPath>/</targetPath>
                   <directory>${project.basedir}/src/main/docker</directory>
                   <include>wait-for-something.sh</include>
                 </resource>
@@ -452,7 +396,6 @@
           <plugin>
             <groupId>com.spotify</groupId>
             <artifactId>docker-maven-plugin</artifactId>
-            <version>0.4.13</version>
             <executions>
               <execution>
                 <id>tag-image-version</id>
@@ -488,6 +431,26 @@
   </profiles>
 
   <dependencies>
+
+    <!-- LOGGING -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>log4j-over-slf4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.flowable</groupId>
       <artifactId>flowable-engine</artifactId>
@@ -539,7 +502,6 @@
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
-      <version>2.4.6</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.groovy</groupId>
@@ -548,8 +510,50 @@
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
-      <version>3.1.0</version>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-config</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-web</artifactId>
+    </dependency>
+
   </dependencies>
 </project>

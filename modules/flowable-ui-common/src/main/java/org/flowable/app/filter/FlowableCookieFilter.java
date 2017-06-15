@@ -24,6 +24,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.apache.commons.codec.binary.Base64;
 import org.flowable.app.model.common.RemoteToken;
 import org.flowable.app.model.common.RemoteUser;
@@ -43,9 +45,6 @@ import org.springframework.security.web.authentication.rememberme.InvalidCookieE
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 public class FlowableCookieFilter extends OncePerRequestFilter {
 
@@ -95,43 +94,35 @@ public class FlowableCookieFilter extends OncePerRequestFilter {
     protected void initTokenCache() {
         Long maxSize = env.getProperty("cache.login-tokens.max.size", Long.class, 2048l);
         Long maxAge = env.getProperty("cache.login-tokens.max.age", Long.class, 30l);
-        tokenCache = CacheBuilder.newBuilder().maximumSize(maxSize).expireAfterWrite(maxAge, TimeUnit.SECONDS).recordStats()
-                .build(new CacheLoader<String, RemoteToken>() {
-
-                    public RemoteToken load(final String tokenId) throws Exception {
-                        RemoteToken token = remoteIdmService.getToken(tokenId);
-                        if (token != null) {
-                            return token;
-                        } else {
-                            throw new FlowableException("token not found " + tokenId);
-                        }
+        tokenCache = Caffeine.newBuilder().maximumSize(maxSize).expireAfterWrite(maxAge, TimeUnit.SECONDS).recordStats()
+                .build(tokenId -> {
+                    RemoteToken token = remoteIdmService.getToken(tokenId);
+                    if (token != null) {
+                        return token;
+                    } else {
+                        throw new FlowableException("token not found " + tokenId);
                     }
-
                 });
     }
 
     protected void initUserCache() {
         Long userMaxSize = env.getProperty("cache.login-users.max.size", Long.class, 2048l);
         Long userMaxAge = env.getProperty("cache.login-users.max.age", Long.class, 30l);
-        userCache = CacheBuilder.newBuilder().maximumSize(userMaxSize).expireAfterWrite(userMaxAge, TimeUnit.SECONDS).recordStats()
-                .build(new CacheLoader<String, FlowableAppUser>() {
-
-                    public FlowableAppUser load(final String userId) throws Exception {
-                        RemoteUser user = remoteIdmService.getUser(userId);
-                        if (user == null) {
-                            throw new FlowableException("user not found " + userId);
-                        }
-
-                        Collection<GrantedAuthority> grantedAuthorities = new ArrayList<GrantedAuthority>();
-                        for (String privilege : user.getPrivileges()) {
-                            grantedAuthorities.add(new SimpleGrantedAuthority(privilege));
-                        }
-
-                        // put account into security context (for controllers to use)
-                        FlowableAppUser appUser = new FlowableAppUser(user, user.getId(), grantedAuthorities);
-                        return appUser;
+        userCache = Caffeine.newBuilder().maximumSize(userMaxSize).expireAfterWrite(userMaxAge, TimeUnit.SECONDS).recordStats()
+                .build(userId -> {
+                    RemoteUser user = remoteIdmService.getUser(userId);
+                    if (user == null) {
+                        throw new FlowableException("user not found " + userId);
                     }
 
+                    Collection<GrantedAuthority> grantedAuthorities = new ArrayList<GrantedAuthority>();
+                    for (String privilege : user.getPrivileges()) {
+                        grantedAuthorities.add(new SimpleGrantedAuthority(privilege));
+                    }
+
+                    // put account into security context (for controllers to use)
+                    FlowableAppUser appUser = new FlowableAppUser(user, user.getId(), grantedAuthorities);
+                    return appUser;
                 });
     }
 
